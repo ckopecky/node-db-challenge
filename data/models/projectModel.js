@@ -6,16 +6,16 @@ const truthy = (obj, key) => {
 module.exports = {
     findProjects,
     findProjectById,
-    //postProjects ('/projects)
+    addProjects,
     //updateProject ('/projects/:id')
     //deleteProject ('/projects/:id')
     findProjectTasks,
-    //postProjectTasks ('/projects/:id/tasks)
+    addTasks,
     //findProjectTaskById ('/projects/:id/tasks/:taskId')
     //updateTask ('/projects/:id/tasks/:taskId')
     //deleteTask ('/projects/:id/tasks/:taskId')
-    findProjectResources 
-    //('/projects/:id/resources)
+    findProjectResources,
+    addResources
     //findProjectResourceById ('/projects/:id/resources/:id')
     //updateProjectResource ('/projects/:id/resources/:id')
     //deleteProjectResource ('/projects/:id/resources/:id')
@@ -28,7 +28,7 @@ function findProjects() {
     console.log(db('projects'));
     return db('projects')
                 .then(results => {
-                    results.map(result => {
+                    results.forEach(result => {
                         return result.completed = truthy(result, "completed");
                     })
                     return results;
@@ -36,35 +36,7 @@ function findProjects() {
 }
 
 function findProjectById(id) {
-    return db('projects')
-        .join('resources_projects', 'resources_projects.projects_id', 'projects.id' )
-        .join('resources', 'resources_projects.resources_id', 'resources.id')
-        .join('tasks', 'tasks.projects_id', 'projects.id')
-        .select('projects.id as projectId', 'projects.name as projectName', 'projects.description as projectDesc', 'resources.name as resourceName', 'resources.description as resourceDesc', 'tasks.description as taskDesc', 'tasks.notes as tasksNotes', 'tasks.completed as tasksCompleted')
-        .where({projectId: id})
-        .then(results => {
-            const resources = [];
-            let projectName = '';
-            let projectDesc = '';
-            let id = null;
-            let taskObj = {};
-            let task = '';
-            let tasks = [];
-            results.forEach((result, index) => {
-                id = result.projectId;
-                projectName = result.projectName;
-                projectDesc = result.projectDesc;
-                if(result.projectName === projectName) {
-                    resources.push({name: result.resourceName, desc: result.resourceDesc});
-                    if(result.taskDesc !== task) {
-                        task = result.taskDesc;                        
-                        taskObj = {task, completed: result.tasksCompleted, notes: result.tasksNotes}
-                    }
-                    tasks.push(taskObj);
-                }
-            })
-            return {id, projectName, projectDesc, resources, tasks}
-        })
+   return db('projects').where({id});
 }
 
 function findProjectTasks(id) {
@@ -98,23 +70,44 @@ function findProjectResources(id) {
     if(projects) {
         return db('resources')
             .join('projects', 'projects.id', 'resources.projects_id' )
-            .select('projects.id as projectid', 'projects.name as projectName', 'projects.description as projectDesc', 'resources.name as resourcesName','resources.description as resourcesDesc')
+            .select('projects.id as projectid', 'projects.name', 'projects.description', 'resources.name as resourcesName','resources.description as resourcesDesc')
             .where({projectid: id})
             .orderBy('projects.id')
             .then(results => {
                 let resourcesDesc = [];
-                let projectName = '';
-                let projectDesc = '';
-                let id = null;
+                let name = '';
+                let description = '';
+                let id = "";
+                console.log(description,"hello", name)
                 results.forEach(result => {
-                    projectName = result.projectName;
-                    projectDesc = result.projectDesc;
+                    console.log("rrrrrrrreeeessssuuuuullllllttttt", result);
+                    name = result.name;
+                    description = result.description;
                     id = result.projectid;
-                    if(result.projectName === projectName) {
+                    if(result.name === projectName) {
                         resourcesDesc.push({name: result.resourcesName, description: result.resourcesDesc})
                     }
                 })
-                return {id, name: projectName, description: projectDesc, resources: resourcesDesc}
+                return {id, name, description, resources: resourcesDesc}
+            })
+            .catch(err => {
+                res.status(500).json({Error: err.message})
             })
     } 
+}
+
+function addProjects(project) {
+    console.log(project);
+    const post = db('projects').insert({name: project.name, description: project.description, completed: project.completed || false});
+    return post;
+}
+
+function addResources(resource, id) {
+    const post = db('resources').insert({name: resource.name, description: resource.description, project_id: id});
+    return post;
+}
+
+function addTasks(task) {
+    const post = db('tasks').insert({description: task.description, notes: task.notes, completed: task.completed || false});
+    return post;
 }
