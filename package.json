@@ -16,6 +16,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "rb": "knex migrate:rollback",
+    "latest": "knex migrate:latest"
   }
 }
