@@ -17,20 +17,14 @@ const findProjects = (req, res) => {
 
 const findProjectById = (req, res) => {
     const { id } = req.params;
-    try {
-        const project = Projects.findProjectById(id)
-            if(project) {
-                console.log(project);
-                res.status(200).json(project);
-            } else {
-                res.status(404).json({Error: "id not found"})
-            }
-        
-    } catch (err) {
-        res.status(500).json({Error: err.message});
+    console.log(req.params);
+    Projects.findProjects(id).then(response => {
+            res.status(200).json(response);
+        })
+        .catch(err =>{
+            res.status(500).json({Error: err.message})
+        });
     }
-    
-}
 
 const findProjectTasks = (req, res) => {
     const { id } = req.params;
@@ -106,7 +100,7 @@ router.route('/')
     .get(findProjects)
     .post(addProjects)
 router.route('/:id')
-    // .get(findProjectById)
+    .get(findProjectById)
 router.route('/:id/tasks')
     .get(findProjectTasks)
     .post(addTasks)
